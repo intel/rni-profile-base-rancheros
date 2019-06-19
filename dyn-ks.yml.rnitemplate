@@ -1,0 +1,96 @@
+#cloud-config
+
+#Copyright (C) 2019 Intel Corporation
+#SPDX-License-Identifier: BSD-3-Clause
+
+ssh_authorized_keys: []
+
+write_files:
+  - path: /etc/rc.local
+    permissions: "0755"
+    owner: root
+    content: |
+      #!/bin/sh
+      /opt/bootstrap/init
+
+  - path: /opt/bootstrap/init
+    permissions: "0755"
+    owner: root
+    content: |
+      #!/bin/bash
+      kernel_params=$(cat /proc/cmdline)
+      if [[ $kernel_params = *"bootstrap="* ]]; then
+        tmp="${kernel_params##*bootstrap=}"
+        param_bootstrap="${tmp%% *}"
+      else
+        echo "'bootstrap' kernel parameter missing!" 2>&1 | tee -a /dev/tty0
+        sleep 30
+        reboot
+      fi
+      
+      wget -O - ${param_bootstrap} | bash -s - @@RNI_IP@@
+  
+  - path: /opt/bootstrap/functions
+    permissions: "0644"
+    owner: root
+    content: |
+      spinner() {
+        local pid=$!
+        local delay=0.05
+        local spinstr='|/-\'
+        while [ "$(ps a | awk '{print $1}' | grep $pid)" ]; do
+          local temp=${spinstr#?}
+          printf " [%c]  " "$spinstr" 2>&1 | tee -a /dev/tty0
+          local spinstr=$temp${spinstr%"$temp"}
+          sleep $delay
+          printf "\b\b\b\b\b\b" 2>&1 | tee -a /dev/tty0
+        done
+        printf "    \b\b\b\b" 2>&1 | tee -a /dev/tty0
+      }
+      
+      run()
+      {
+        local msg=$1
+        local runThis=$2
+        local log=$3
+        echo -e "\e[1m\e[4m$(date | awk '{print $4}') - $msg...\e[0m" 2>&1 | tee -a /dev/tty0
+        echo "$(date) START: Running $runThis..." >> $log
+        if [ "$debug" = true ]; then
+          unbuffer $runThis $verbose | tee -a $log /dev/tty0
+        else
+          (eval $runThis >> $log 2>&1) &
+          spinner
+          wait %1
+          exitcode=$?
+          if [ $exitcode -ne 0 ]; then
+            local success=false
+          else
+            local success=true
+          fi
+          if [ "$success" = false ]; then
+            echo "$(date) FAILED: Running $runThis..." >> $log
+            echo -e "\e[1m[\e[31mFAILED: Running $runThis\e[39m]" 2>&1 | tee -a /dev/tty0
+            echo -e "\e[1mPlease check the file $log." 2>&1 | tee -a /dev/tty0
+            exit 1
+          else
+            echo "$(date) SUCCESS: Running $runThis..." >> $log
+            echo -e "\e[1m[\e[32msuccess\e[39m]" 2>&1 | tee -a /dev/tty0
+          fi
+        fi
+      }
+
+      
+rancher:
+  console: alpine
+  network:
+    interfaces:
+      eth0:
+        dhcp: true
+      eth1:
+        dhcp: false
+      eth2:
+        dhcp: false
+      eth3:
+        dhcp: false
+      eth4:
+        dhcp: false

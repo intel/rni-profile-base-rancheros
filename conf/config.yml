@@ -1,0 +1,6 @@
+---
+
+# Copyright (C) 2019 Intel Corporation
+# SPDX-License-Identifier: BSD-3-Clause
+
+kernel_arguments: rancher.password=P@ssw0rd! rancher.cloud_init.datasources=[url:http://@@RNI_IP@@/profile/@@PROFILE_NAME@@/dyn-ks.yml]
