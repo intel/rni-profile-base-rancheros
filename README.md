@@ -1,6 +1,6 @@
 # Rancher OS Profile
 
-Intended to be used with Retail Node Installer, this Rancher OS profile contains a few files that ultimately will install Rancher OS v1.5.1 to disk.
+Intended to be used with [Retail Node Installer](https://github.com/intel/retail-node-installer), this Rancher OS profile contains a few files that ultimately will install Rancher OS v1.5.1 to disk.
 
 ## Getting Started
 
@@ -8,7 +8,7 @@ Intended to be used with Retail Node Installer, this Rancher OS profile contains
 
 Out of the box, the Rancher profile should _just work_. Therefore, no specific steps are required in order to use this profile that have not already been described in the Retail Node Installer documentation. Simply boot a client device using legacy BIOS PXE boot and the Rancher profile should automatically launch after a brief waiting period. _Note that RancherOS itself does not support UEFI installation._
 
-If you do encounter issues PXE booting, please review the steps outlined in the Retail Node Installer documentation and ensure you've followed them correctly. See the [Known Issues](#Known-Issues) section for possible solutions.
+If you do encounter issues PXE booting, please review the steps outlined in the [Retail Node Installer documentation](https://github.com/intel/retail-node-installer) and ensure you've followed them correctly. See the [Known Issues](#Known-Issues) section for possible solutions.
 
 After installing Rancher, the default login username is `rancher` and the default password is `P@ssw0rd!`. This password is defined in the `bootstrap.sh` script and in the `conf/config.yml` as a kernel argument.
 
@@ -17,7 +17,7 @@ After installing Rancher, the default login username is `rancher` and the defaul
 This RancherOS profile sets this kernel argument in `conf/config.yml`:
 
 ```
-rancher.cloud_init.datasources=[url:http://@@RNI_IP@@/profile/@@PROFILE_NAME@@/dyn-ks.yml]
+rancher.cloud_init.datasources=[url:http://@@HOST_IP@@/profile/@@PROFILE_NAME@@/dyn-ks.yml]
 ```
 
 The Rancher initrd uses [cloud init](https://cloud-init.io/) to process the file called `dyn-ks.yml`, which is a [kickstart](https://en.wikipedia.org/wiki/Kickstart_(Linux)) file that contains a few bash script definitions. The last step of this kickstart is to run `wget` to download `bootstrap.sh` from the Retail Node Installer, which is then executed in a shell. Inside the `bootstrap.sh` file is a minimal script that installs Rancher to disk using `ros install`.
@@ -40,17 +40,17 @@ The flexibility of Retail Node Installer comes to fruition with the following pr
 
 * `conf/config.yml` - This file contains the arguments that are passed to the Linux kernel upon PXE boot. Alter these arguments according to the needs of your scripts. The following kernel arguments are always prepended to the arguments specified in `conf/config.yml`:
   * `console=tty0`
-  * `httpserver=@@RNI_IP@@`
-  * `bootstrap=http://@@RNI_IP@@/profile/${profileName}/bootstrap.sh`
+  * `httpserver=@@HOST_IP@@`
+  * `bootstrap=http://@@HOST_IP@@/profile/${profileName}/bootstrap.sh`
 * `conf/files.yml` - This file contains a few definitions that tell Retail Node Installer to download specific files that you can customize. **Please check if there are any [Known Issues](#Known-Issues) before changing this file from the default.** See `conf/files.sample.yml` for a full example.
 * `bootstrap.sh` - A profile is required to have a `bootstrap.sh` as an entry point. This is an arbitrary script that you can control. If you plan to create profiles for other operating systems such as Ubuntu or Debian, it is recommended to use [preseed](https://wiki.debian.org/DebianInstaller/Preseed) to launch `bootstrap.sh` as the last step.
 * `*.rnitemplate` - Any file under any directory (for example `dyn-ks.yml.rnitemplate`) will be processed into its intended file (becoming`dyn-ks.yml`). Currently the following variables are processed:
-  * `@@RNI_DHCP_MIN@@`
-  * `@@RNI_DHCP_MAX@@`
-  * `@@RNI_NETWORK_BROADCAST_IP@@`
-  * `@@RNI_NETWORK_GATEWAY_IP@@`
-  * `@@RNI_IP@@`
-  * `@@RNI_NETWORK_DNS_SECONDARY@@`
+  * `@@DHCP_MIN@@`
+  * `@@DHCP_MAX@@`
+  * `@@NETWORK_BROADCAST_IP@@`
+  * `@@NETWORK_GATEWAY_IP@@`
+  * `@@HOST_IP@@`
+  * `@@NETWORK_DNS_SECONDARY@@`
   * `@@PROFILE_NAME@@`
 
 ### Customization Requirements
@@ -64,7 +64,7 @@ A profile **must** have all of the following:
 
 To update rancher, you will need to connect to the rancher system and run the `ros os upgrade` command.
 
-You will also need to provide the `-i` command line argument with the rancher version you would like to upgrade to. Rancher versions are stored in the official rancher git repository found here: https://github.com/rancher/os/releases
+You will also need to provide the `-i` command line argument with the rancher version you would like to upgrade to. Rancher versions are stored in the official rancher git repository found [here](https://github.com/rancher/os/releases)
 
 ```bash
 ros os upgrade -i rancher/os:<UPDATE_VERSION>
